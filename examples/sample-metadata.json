@@ -1,0 +1,32 @@
+{
+  "entries": [
+    {
+      "key": "Sheet1!B3",
+      "type": "cell",
+      "source": "系统 A 导出",
+      "url": "https://example.com/export/123",
+      "note": "基于 data/sales.csv，计算 SUM(...)",
+      "attachments": ["att-0001"],
+      "author": "zhangsan",
+      "last_modified": "2026-09-09T10:05:00Z"
+    },
+    {
+      "key": "Sheet1!Price",
+      "type": "header",
+      "source": "供应商表 suppliers.csv",
+      "note": "单位：CNY",
+      "attachments": [],
+      "author": "lisi",
+      "last_modified": "2026-09-08T12:00:00Z"
+    }
+  ],
+  "attachments": [
+    {
+      "id": "att-0001",
+      "filename": "invoice-123.pdf",
+      "mime": "application/pdf",
+      "size": 123456,
+      "base64": "JVBERi0xLjcKJc..."
+    }
+  ]
+}
