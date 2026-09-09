@@ -1,0 +1,5 @@
+Triggering GitHub Actions workflow to generate demo-initialized.xlsx.
+
+This commit was created to trigger the `.github/workflows/generate-demo.yml` workflow on branch release/v0.1.
+
+Timestamp: 2026-09-09T17:53:00Z

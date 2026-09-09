@@ -1,5 +1,3 @@
-Release v0.1 TODOs:
-- Generate demo-initialized.xlsx and commit to examples/ (automated via tools/init_metadata.js)
-- Complete React integration with Office.js metadata API
-- Build React production bundle and update manifest SourceLocation to the release host
-- Prepare sideload/install documentation and package
+Trigger note appended to TODO
+
+- trigger_time: 2026-09-09T17:53:00Z
