@@ -1,0 +1,13 @@
+{
+  "name": "cell-source-sidebar-office-addin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "http-server office-addin/src -p 3000",
+    "init-metadata": "node ../tools/init_metadata.js ../examples/示例.xlsx ../examples/demo-initialized.xlsx ../examples/sample-metadata.json"
+  },
+  "dependencies": {
+    "http-server": "^0.12.3",
+    "xlsx": "^0.18.5"
+  }
+}

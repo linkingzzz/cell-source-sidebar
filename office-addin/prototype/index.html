@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Prototype - Sidebar UI</title>
+  <style>
+    body{font-family: Arial, sans-serif; padding: 12px}
+    .entry{border:1px solid #ddd;padding:8px;margin-bottom:8px}
+    label{display:block;margin-top:6px}
+  </style>
+</head>
+<body>
+  <h2>Prototype: Cell Source Sidebar</h2>
+  <div id="selection">Selection: <span id="sel">Sheet1!B3</span></div>
+  <div id="entry" class="entry">
+    <label>Source: <input id="src"/></label>
+    <label>URL: <input id="url"/></label>
+    <label>Note: <textarea id="note"></textarea></label>
+    <label>Attach: <input type="file" id="attach"/></label>
+    <div id="attList"></div>
+    <button id="save">Save</button>
+  </div>
+  <pre id="log"></pre>
+  <script src="app.js"></script>
+</body>
+</html>
