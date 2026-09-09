@@ -1,0 +1,10 @@
+This is a placeholder note for the demo-initialized.xlsx file.
+
+The actual demo workbook will be generated from examples/示例.xlsx and examples/sample-metadata.json using the init_metadata.js tool in /tools.
+
+To generate locally:
+1. cd office-addin
+2. npm install
+3. npm run init-metadata
+
+The script will write ../examples/demo-initialized.xlsx. Once generated and verified, the real .xlsx will be committed to this branch.
