@@ -1,0 +1,44 @@
+name: Generate demo-initialized.xlsx
+
+on:
+  push:
+    branches:
+      - release/v0.1
+
+jobs:
+  generate-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: office-addin
+        run: |
+          npm ci
+
+      - name: Run init_metadata script
+        working-directory: office-addin
+        run: |
+          npm run init-metadata
+
+      - name: Commit and push demo if generated
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add examples/demo-initialized.xlsx || true
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore(release): add generated demo-initialized.xlsx"
+            git push origin HEAD:release/v0.1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
