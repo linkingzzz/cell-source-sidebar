@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "http-server office-addin/src -p 3000",
+    "start": "http-server src -p 3000 -S -C %USERPROFILE%/.office-addin-dev-certs/localhost.crt -K %USERPROFILE%/.office-addin-dev-certs/localhost.key",
     "init-metadata": "node ../tools/init_metadata.js ../examples/示例.xlsx ../examples/demo-initialized.xlsx ../examples/sample-metadata.json"
   },
   "dependencies": {
     "http-server": "^0.12.3",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "office-addin-dev-certs": "^3.0.0"
   }
 }
