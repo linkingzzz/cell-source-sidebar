@@ -1,0 +1,5 @@
+Triggering workflow via repository commit by Copilot.
+
+This file was added to create a new push on release/v0.1 to trigger the Generate demo-initialized.xlsx workflow.
+
+Timestamp: 2026-09-09T17:59:00Z
