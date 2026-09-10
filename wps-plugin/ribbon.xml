@@ -1,0 +1,11 @@
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui" onLoad="OnAddinLoad">
+    <ribbon startFromScratch="false">
+        <tabs>
+            <tab id="cssTab" label="单元格来源">
+                <group id="cssGroup" label="侧边栏">
+                    <button id="btnTogglePane" label="显示/隐藏侧边栏" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage" getVisible="OnGetVisible" size="large"/>
+                </group>
+            </tab>
+        </tabs>
+    </ribbon>
+</customUI>

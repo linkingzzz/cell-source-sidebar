@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JsPlugin>
+  <ApiVersion>1.0.0</ApiVersion>
+  <Name>cell-source-sidebar</Name>
+  <Description>在侧边栏显示与编辑单元格数据来源（WPS 版）</Description>
+</JsPlugin>

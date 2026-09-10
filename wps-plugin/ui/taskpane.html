@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>单元格来源</title>
+  <script type="text/javascript" src="../js/metadata.js"></script>
+  <script type="text/javascript" src="../js/taskpane.js"></script>
+  <style>
+    body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 10px; font-size: 13px; }
+    .row { margin-bottom: 8px; }
+    input, textarea { width: 100%; box-sizing: border-box; }
+    textarea { height: 90px; }
+    .muted { color: #666; }
+    #selftest { margin-top: 10px; padding: 4px; background: #f3f3f3; word-break: break-all; }
+    #log { margin-top: 8px; color: #888; white-space: pre-wrap; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="row"><b>Cell Source Sidebar (WPS)</b></div>
+  <div class="row muted">工作簿：<span id="wbName"></span></div>
+  <div class="row">选区：<span id="sel"></span>　<span class="muted">已存条目 <span id="metaCount">0</span></span></div>
+  <div class="row">数据来源<input id="src"></div>
+  <div class="row">链接<input id="url"></div>
+  <div class="row">备注<textarea id="note"></textarea></div>
+  <div class="row"><button id="saveBtn">保存到工作簿</button></div>
+  <div id="selftest">（自检未运行）</div>
+  <div id="log"></div>
+</body>
+</html>
