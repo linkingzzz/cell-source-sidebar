@@ -13,6 +13,7 @@ Columns:
 - G: author
 - H: last_modified (ISO8601)
 - I: version
+- J: grid (JSON 2D array of strings, the sidebar detail table; 9 rows x 4 columns)
 
 2) Sheet: __metadata_attachments (Attachments)
 Columns:
@@ -23,9 +24,12 @@ Columns:
 - E: base64 (attachment payload)
 - F: uploaded_by
 - G: uploaded_at
+- H: part (1-based chunk index; one payload spans several rows when its base64 exceeds one cell)
 
 Notes & limits
 - Excel cell text length ~32k characters. Storing large base64 values in a single cell may exceed limits.
+- WPS implements the split: base64 is chunked at 30000 characters, one row per chunk sharing the same id and numbered in column H; readers concatenate in `part` order.
 - Office Add-in will prefer CustomXMLParts for attachments when available; fallback to splitting base64 across cells in __metadata_attachments or storing small attachments directly.
+- Columns J (grid) and H (part) were added with the WPS sidebar feature; readers must treat them as optional so workbooks written before that stay readable.
 - MVP enforces single-file limit 10MB via client-side validation.
 

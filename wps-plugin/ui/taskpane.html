@@ -2,28 +2,45 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>单元格来源</title>
+  <title>侧边栏批注</title>
   <script type="text/javascript" src="../js/metadata.js"></script>
   <script type="text/javascript" src="../js/taskpane.js"></script>
   <style>
-    body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 10px; font-size: 13px; }
-    .row { margin-bottom: 8px; }
-    input, textarea { width: 100%; box-sizing: border-box; }
-    textarea { height: 90px; }
+    body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 10px; font-size: 13px; color: #222; }
+    h4 { margin: 14px 0 6px; font-size: 13px; font-weight: 600; border-left: 3px solid #2b6cb0; padding-left: 6px; }
     .muted { color: #666; }
+    input[type=text], textarea { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 12px; }
+    textarea { height: 90px; }
+    #attList { margin-top: 6px; }
+    .att { display: flex; align-items: center; justify-content: space-between; padding: 2px 0; }
+    .att a { color: #2b6cb0; cursor: pointer; text-decoration: none; word-break: break-all; }
+    .att a:hover { text-decoration: underline; }
+    .att .del { color: #c53030; cursor: pointer; margin-left: 8px; white-space: nowrap; }
+    table.grid { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    table.grid td { border: 1px solid #cbd5e0; padding: 0; height: 22px; }
+    table.grid input { border: 0; padding: 3px; font-size: 12px; height: 21px; }
+    table.grid input:focus { outline: 1px solid #2b6cb0; }
+    button { font-family: inherit; font-size: 12px; padding: 4px 10px; cursor: pointer; }
     #selftest { margin-top: 10px; padding: 4px; background: #f3f3f3; word-break: break-all; }
     #log { margin-top: 8px; color: #888; white-space: pre-wrap; word-break: break-all; }
   </style>
 </head>
 <body>
-  <div class="row"><b>Cell Source Sidebar (WPS)</b></div>
-  <div class="row muted">工作簿：<span id="wbName"></span></div>
-  <div class="row">选区：<span id="sel"></span>　<span class="muted">已存条目 <span id="metaCount">0</span></span></div>
-  <div class="row">数据来源<input id="src"></div>
-  <div class="row">链接<input id="url"></div>
-  <div class="row">备注<textarea id="note"></textarea></div>
-  <div class="row"><button id="saveBtn">保存到工作簿</button></div>
-  <div id="selftest">（自检未运行）</div>
+  <div><b>单元格来源</b>　<span class="muted">工作簿：<span id="wbName"></span></span></div>
+  <div class="muted">选中单元格：<span id="sel"></span> <span id="state"></span>　已存批注 <span id="metaCount">0</span></div>
+
+  <h4>1、附件</h4>
+  <div><button id="uploadBtn">上传附件</button><input type="file" id="fileInput" style="display:none"></div>
+  <div id="attList"></div>
+
+  <h4>2、明细表（9 × 4）</h4>
+  <table class="grid"><tbody id="gridBody"></tbody></table>
+
+  <h4>3、备注</h4>
+  <textarea id="note" placeholder="针对该单元格的说明"></textarea>
+
+  <div style="margin-top:10px"><button id="saveBtn">保存到工作簿</button></div>
+  <div id="selftest"></div>
   <div id="log"></div>
 </body>
 </html>
