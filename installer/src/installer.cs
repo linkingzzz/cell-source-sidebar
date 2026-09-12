@@ -1,6 +1,7 @@
 ﻿// 表格批注插件 - 单文件安装/卸载程序
 // 安装：双击本 exe；卸载：安装目录下的 uninstall.exe /uninstall
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -11,6 +12,12 @@ using System.Windows.Forms;
 using System.Xml;
 using Microsoft.Win32;
 
+[assembly: AssemblyTitle(C.Product)]
+[assembly: AssemblyProduct(C.Product)]
+[assembly: AssemblyDescription(C.Product + " 安装程序")]
+[assembly: AssemblyFileVersion(C.Version + ".0")]
+[assembly: AssemblyVersion(C.Version + ".0")]
+
 internal static class C
 {
     public const string Product = "表格批注插件";
@@ -19,6 +26,10 @@ internal static class C
     public const string CatalogId = "{D8F1B2A3-6C4E-4B77-9E51-2A7C0D5B1E34}";
     public const string WpsName = "cell-source-sidebar";
     public const string WpsFolder = "cell-source-sidebar_1.0.0";
+    // WPS 只认 ASCII 的 name_version 目录，中文名会让 WPS 拒绝加载（实测），故内部名保持 ASCII；
+    // 中文名曾用于过渡版本，安装/卸载时一并清理。
+    public const string WpsNameLegacy = "表格批注插件";
+    public const string WpsFolderLegacy = "表格批注插件_1.0.0";
     public const string PayloadResource = "payload.zip";
 
     public static string InstallDir { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Product); } }
@@ -198,6 +209,7 @@ internal static class Setup
             if (Detect.HasWps())
             {
                 Directory.CreateDirectory(C.WpsAddins);
+                CleanLegacy(log);
                 Files2.CopyDir(Path.Combine(tmp, "wps"), C.WpsPlugin);
                 log("已复制 WPS 插件：" + C.WpsPlugin);
                 MergePublishXml(log);
@@ -229,6 +241,35 @@ internal static class Setup
         }
     }
 
+    private static void CleanLegacy(Action<string> log)
+    {
+        string old = Path.Combine(C.WpsAddins, C.WpsFolderLegacy);
+        try
+        {
+            if (Directory.Exists(old)) { Directory.Delete(old, true); log("已清理旧版 WPS 插件目录：" + old); }
+        }
+        catch (Exception ex) { log("清理旧版 WPS 插件目录失败（请先关闭 WPS）：" + ex.Message); }
+        ClearAuthRecord(false, log);
+    }
+
+    internal static void ClearAuthRecord(bool includeCurrent, Action<string> log)
+    {
+        string file = Path.Combine(C.WpsAddins, "authaddin.json");
+        try
+        {
+            if (!File.Exists(file)) { return; }
+            string text = File.ReadAllText(file, Encoding.UTF8);
+            bool legacy = text.IndexOf(C.WpsNameLegacy, StringComparison.Ordinal) >= 0;
+            bool current = includeCurrent && text.IndexOf(C.WpsName, StringComparison.Ordinal) >= 0;
+            if (legacy || current)
+            {
+                File.Delete(file);
+                log("已清除 WPS 旧授权记录（WPS 下次启动会自动重建）：" + file);
+            }
+        }
+        catch (Exception ex) { log("清除 WPS 授权记录失败：" + ex.Message); }
+    }
+
     private static void MergePublishXml(Action<string> log)
     {
         string file = Path.Combine(C.WpsAddins, "publish.xml");
@@ -246,11 +287,16 @@ internal static class Setup
         if (!ok) { doc.LoadXml("<jsplugins></jsplugins>"); }
 
         XmlElement node = null;
+        List<XmlElement> legacyNodes = new List<XmlElement>();
         foreach (XmlNode n in doc.DocumentElement.ChildNodes)
         {
             XmlElement e = n as XmlElement;
-            if (e != null && e.Name == "jsplugin" && e.GetAttribute("name") == C.WpsName) { node = e; break; }
+            if (e == null || e.Name != "jsplugin") { continue; }
+            string nm = e.GetAttribute("name");
+            if (nm == C.WpsName) { node = e; }
+            else if (nm == C.WpsNameLegacy) { legacyNodes.Add(e); }
         }
+        for (int i = 0; i < legacyNodes.Count; i++) { doc.DocumentElement.RemoveChild(legacyNodes[i]); }
         if (node == null)
         {
             node = doc.CreateElement("jsplugin");
@@ -293,6 +339,9 @@ internal static class Remove
         try
         {
             if (Directory.Exists(C.WpsPlugin)) { Directory.Delete(C.WpsPlugin, true); log("已删除 WPS 插件目录。"); }
+            string oldWps = Path.Combine(C.WpsAddins, C.WpsFolderLegacy);
+            if (Directory.Exists(oldWps)) { Directory.Delete(oldWps, true); log("已删除旧版 WPS 插件目录。"); }
+            Setup.ClearAuthRecord(true, log);
         }
         catch (Exception ex) { log("删除 WPS 插件失败（请先关闭 WPS）：" + ex.Message); }
 
@@ -315,15 +364,15 @@ internal static class Remove
         {
             XmlDocument doc = new XmlDocument();
             doc.Load(file);
+            List<XmlElement> targets = new List<XmlElement>();
             foreach (XmlNode n in doc.DocumentElement.ChildNodes)
             {
                 XmlElement e = n as XmlElement;
-                if (e != null && e.Name == "jsplugin" && e.GetAttribute("name") == C.WpsName)
-                {
-                    doc.DocumentElement.RemoveChild(e);
-                    break;
-                }
+                if (e == null || e.Name != "jsplugin") { continue; }
+                string nm = e.GetAttribute("name");
+                if (nm == C.WpsName || nm == C.WpsNameLegacy) { targets.Add(e); }
             }
+            for (int i = 0; i < targets.Count; i++) { doc.DocumentElement.RemoveChild(targets[i]); }
             doc.Save(file);
             log("已从 WPS 注册文件中移除插件条目。");
         }

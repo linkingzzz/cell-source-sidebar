@@ -60,6 +60,8 @@ WPS reads add-ins from `%APPDATA%\kingsoft\wps\jsaddons\`:
        </jsplugins>
 
 3. Restart WPS 表格 (`et.exe`). A 数据源 tab appears.
+
+> The `name`/folder must stay ASCII (`cell-source-sidebar_1.0.0`): WPS derives the add-in path from `<name>_<version>` and will not load an add-in whose folder name contains non-ASCII characters. All user-visible text (ribbon tab, buttons, task pane) is Chinese.
 4. Uninstall: delete the addon folder and its `<jsplugin>` entry.
 
 ## Verification
