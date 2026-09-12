@@ -28,8 +28,8 @@ Columns:
 
 Notes & limits
 - Excel cell text length ~32k characters. Storing large base64 values in a single cell may exceed limits.
-- WPS implements the split: base64 is chunked at 30000 characters, one row per chunk sharing the same id and numbered in column H; readers concatenate in `part` order.
-- Office Add-in will prefer CustomXMLParts for attachments when available; fallback to splitting base64 across cells in __metadata_attachments or storing small attachments directly.
+- Both hosts implement the split the same way: base64 is chunked at 30000 characters, one row per chunk sharing the same id and numbered in column H; readers concatenate in `part` order (see `wps-plugin/js/metadata.js` and `office-addin/src/metadata.js`).
+- CustomXMLParts remain an option for attachments but are not used: both hosts store base64 in __metadata_attachments.
 - Columns J (grid) and H (part) were added with the WPS sidebar feature; readers must treat them as optional so workbooks written before that stay readable.
 - MVP enforces single-file limit 10MB via client-side validation.
 

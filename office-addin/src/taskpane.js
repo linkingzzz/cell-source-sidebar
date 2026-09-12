@@ -1,125 +1,212 @@
-// Updated taskpane.js to use event handler and metadata helper
+// office-addin/src/taskpane.js
+// Sidebar for the selected cell: attachments / 9x4 detail table / note.
+// Mirrors the WPS add-in UI and storage contract.
 
-Office.onReady(() => {
-  document.getElementById('status').innerText = 'Office ready';
-  // try to register proper selection change event; fallback to polling
-  try {
-    Excel.run(async context => {
-      context.workbook.onSelectionChanged.add(async () => {
-        try { await loadEntryForCurrentSelection(); } catch (e) { console.error('handler error', e); }
-      });
-      await context.sync();
-    }).catch(e => {
-      console.warn('Could not register selectionChanged event, falling back to polling', e);
-      startPollingSelection();
-    });
-  } catch (e) {
-    console.warn('Event registration not available, use polling', e);
-    startPollingSelection();
-  }
-  document.getElementById('saveBtn').addEventListener('click', onSaveClicked);
-  document.getElementById('fileInput').addEventListener('change', onFileSelected);
+const POLL_MS = 2000;
+
+let lastKey = null;
+let lastSig = null;
+let currentEntry = null;
+let gridInputs = [];
+let attMeta = {};
+let busy = false;
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function log(msg) {
+  const el = $("log");
+  if (el) el.innerText = msg + "\n" + el.innerText;
+}
+
+Office.onReady((info) => {
+  $("status").innerText = "Office ready";
+  $("wbName").innerText = info && info.host ? String(info.host) : "";
+  buildGrid();
+  $("uploadBtn").addEventListener("click", () => $("fileInput").click());
+  $("fileInput").addEventListener("change", onUpload);
+  $("saveBtn").addEventListener("click", onSave);
+  refresh(true).catch((e) => log("init error: " + e));
+  // Polling covers both selection changes and edits made from the ribbon (删除侧边栏批注).
+  setInterval(() => refresh(false).catch((e) => log("poll error: " + e)), POLL_MS);
 });
 
-let lastAddress = null;
-let currentEntry = null;
-let pendingAttachment = null; // {filename,mime,base64,size}
-
-function startPollingSelection() {
-  setInterval(async () => {
-    try { await loadEntryForCurrentSelection(); } catch (e) { /* ignore */ }
-  }, 1200);
-}
-
-async function loadEntryForCurrentSelection() {
-  try {
-    await Excel.run(async (context) => {
-      const range = context.workbook.getSelectedRange();
-      range.load(['address','values']);
-      await context.sync();
-      const addr = range.address.replace(/\$/g, '');
-      if (addr === lastAddress) return;
-      lastAddress = addr;
-      document.getElementById('selectionAddr').innerText = addr;
-
-      // read metadata from workbook
-      const meta = await window.metadataApi.readMetadataFromWorkbook();
-      // lookup exact cell
-      let entry = meta.entries.find(e => e.key === addr);
-      if (!entry) {
-        // try header if first row header exists
-        try {
-          const header = range.worksheet.getCell(0, range.columnIndex).getText();
-        } catch (e) {
-          // ignore
-        }
-      }
-      currentEntry = entry || null;
-      if (entry) renderEntry(entry);
-      else clearForm();
-    });
-  } catch (e) {
-    console.error('loadEntryForCurrentSelection error', e);
+function buildGrid() {
+  const tbody = $("gridBody");
+  tbody.innerHTML = "";
+  gridInputs = [];
+  for (let r = 0; r < window.metadataApi.GRID_ROWS; r++) {
+    const tr = document.createElement("tr");
+    const row = [];
+    for (let c = 0; c < window.metadataApi.GRID_COLS; c++) {
+      const td = document.createElement("td");
+      const inp = document.createElement("input");
+      inp.type = "text";
+      td.appendChild(inp);
+      tr.appendChild(td);
+      row.push(inp);
+    }
+    tbody.appendChild(tr);
+    gridInputs.push(row);
   }
 }
 
-function renderEntry(entry) {
-  document.getElementById('inputSource').value = entry.source || '';
-  document.getElementById('inputUrl').value = entry.url || '';
-  document.getElementById('inputNote').value = entry.note || '';
-  renderAttachments(entry.attachments || []);
+function readGridInputs() {
+  const g = window.metadataApi.emptyGrid();
+  for (let r = 0; r < g.length; r++) {
+    for (let c = 0; c < g[r].length; c++) g[r][c] = gridInputs[r][c].value;
+  }
+  return g;
 }
 
-function clearForm() {
-  document.getElementById('inputSource').value = '';
-  document.getElementById('inputUrl').value = '';
-  document.getElementById('inputNote').value = '';
-  renderAttachments([]);
+function fillGrid(grid) {
+  const src = grid || window.metadataApi.emptyGrid();
+  for (let r = 0; r < gridInputs.length; r++) {
+    for (let c = 0; c < gridInputs[r].length; c++) gridInputs[r][c].value = src[r][c] || "";
+  }
 }
 
-function renderAttachments(list) {
-  const container = document.getElementById('attachmentsList');
-  container.innerHTML = '';
-  if (!list || list.length === 0) { container.innerText = 'No attachments'; return; }
-  list.forEach(id => {
-    const div = document.createElement('div');
-    div.innerText = id + ' ';
-    container.appendChild(div);
+async function refresh(force) {
+  if (busy) return;
+  busy = true;
+  try {
+    const state = await window.metadataApi.readState();
+    const entry = state.entries.find((e) => e.key === state.key) || null;
+    const sig = JSON.stringify(entry);
+    $("sel").innerText = state.key;
+    if (!force && state.key === lastKey && sig === lastSig) return;
+    lastKey = state.key;
+    lastSig = sig;
+    currentEntry = entry;
+    attMeta = {};
+    state.attachments.forEach((a) => { attMeta[a.id] = a; });
+    $("state").innerText = entry ? "（已有批注）" : "（无批注）";
+    $("metaCount").innerText = state.entries.length;
+    $("note").value = entry ? entry.note : "";
+    fillGrid(entry ? entry.grid : null);
+    renderAttachments(entry ? entry.attachments : []);
+  } finally {
+    busy = false;
+  }
+}
+
+function renderAttachments(ids) {
+  const box = $("attList");
+  box.innerHTML = "";
+  if (!ids || !ids.length) {
+    box.innerText = "（暂无附件）";
+    return;
+  }
+  ids.forEach((id) => {
+    const meta = attMeta[id];
+    const div = document.createElement("div");
+    div.className = "att";
+    const a = document.createElement("a");
+    a.innerText = meta ? meta.filename || id : id;
+    a.title = "点击下载";
+    a.addEventListener("click", () => downloadAttachment(id));
+    div.appendChild(a);
+    const del = document.createElement("span");
+    del.className = "del";
+    del.innerText = "删除";
+    del.addEventListener("click", () => removeAttachment(id));
+    div.appendChild(del);
+    box.appendChild(div);
   });
 }
 
-async function onSaveClicked() {
-  const addr = lastAddress;
-  if (!addr) { alert('No selection'); return; }
-  const entry = {
-    key: addr,
-    type: 'cell',
-    source: document.getElementById('inputSource').value,
-    url: document.getElementById('inputUrl').value,
-    note: document.getElementById('inputNote').value,
-    attachments: currentEntry ? (currentEntry.attachments || []) : []
-  };
-  if (pendingAttachment) {
-    const attId = 'att-' + Date.now();
-    entry.attachments.push(attId);
-    await window.metadataApi.writeAttachment(attId, pendingAttachment);
-    pendingAttachment = null;
-    document.getElementById('fileInput').value = '';
-  }
-  await window.metadataApi.writeEntry(entry);
-  currentEntry = entry;
-  alert('Saved metadata to workbook');
+function base64ToBytes(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
-async function onFileSelected(ev) {
-  const f = ev.target.files[0];
+async function downloadAttachment(id) {
+  try {
+    const att = await window.metadataApi.readAttachment(id);
+    if (!att) {
+      log("附件数据缺失：" + id);
+      return;
+    }
+    const blob = new Blob([base64ToBytes(att.base64)], { type: att.mime || "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = att.filename || id;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    log("已触发下载：" + a.download);
+  } catch (e) {
+    log("download error: " + e);
+  }
+}
+
+function onUpload(ev) {
+  const input = ev.target;
+  const f = input.files && input.files[0];
   if (!f) return;
-  if (f.size > 10 * 1024 * 1024) { alert('File exceeds 10MB limit'); ev.target.value = ''; return; }
+  if (f.size > window.metadataApi.MAX_FILE_BYTES) {
+    log("附件超过 10MB 上限，已取消：" + f.name);
+    input.value = "";
+    return;
+  }
   const reader = new FileReader();
-  reader.onload = function(evt) {
-    const b64 = evt.target.result.split(',')[1];
-    pendingAttachment = { filename: f.name, mime: f.type || 'application/octet-stream', size: f.size, base64: b64 };
-    alert('Attachment ready: ' + f.name);
+  reader.onload = async () => {
+    try {
+      const b64 = String(reader.result).split(",")[1] || "";
+      const id = "att-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 1679616).toString(36);
+      await window.metadataApi.writeAttachment(id, { filename: f.name, mime: f.type, size: f.size, base64: b64 });
+      const entry = currentEntry || { key: lastKey, type: "cell", source: "", url: "", note: "", attachments: [] };
+      entry.note = $("note").value;
+      entry.grid = readGridInputs();
+      entry.attachments = (entry.attachments || []).concat([id]);
+      await window.metadataApi.writeEntry(entry);
+      await refresh(true);
+      log("已上传 " + f.name + "（" + (f.size / 1024).toFixed(1) + " KB）");
+    } catch (e) {
+      log("upload error: " + e);
+    }
+    input.value = "";
   };
   reader.readAsDataURL(f);
+}
+
+async function removeAttachment(id) {
+  try {
+    await window.metadataApi.deleteAttachment(id);
+    if (currentEntry) {
+      currentEntry.attachments = (currentEntry.attachments || []).filter((x) => x !== id);
+      currentEntry.note = $("note").value;
+      currentEntry.grid = readGridInputs();
+      await window.metadataApi.writeEntry(currentEntry);
+    }
+    await refresh(true);
+    log("已删除附件 " + id);
+  } catch (e) {
+    log("del attachment error: " + e);
+  }
+}
+
+async function onSave() {
+  try {
+    const entry = {
+      key: lastKey,
+      type: "cell",
+      source: currentEntry ? currentEntry.source : "",
+      url: currentEntry ? currentEntry.url : "",
+      note: $("note").value,
+      attachments: currentEntry ? currentEntry.attachments || [] : [],
+      grid: readGridInputs()
+    };
+    const row = await window.metadataApi.writeEntry(entry);
+    currentEntry = entry;
+    await refresh(true);
+    log("已保存 " + entry.key + "（第 " + row + " 行）");
+  } catch (e) {
+    log("save error: " + e);
+  }
 }
