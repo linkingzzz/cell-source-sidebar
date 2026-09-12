@@ -1,10 +1,10 @@
 <customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui" onLoad="OnAddinLoad">
     <ribbon startFromScratch="false">
         <tabs>
-            <tab id="cssTab" label="单元格来源">
+            <tab id="cssTab" label="数据源">
                 <group id="cssGroup" label="侧边栏批注">
-                    <button id="btnAddNote" label="添加侧边栏批注" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage" getVisible="OnGetVisible" size="large"/>
-                    <button id="btnDelNote" label="删除侧边栏批注" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage" getVisible="OnGetVisible" size="large"/>
+                    <button id="btnAddNote" label="显示侧边栏批注" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage" getVisible="OnGetVisible" size="large"/>
+                    <button id="btnHideNote" label="隐藏侧边栏批注" onAction="OnAction" getEnabled="OnGetEnabled" getImage="GetImage" getVisible="OnGetVisible" size="large"/>
                 </group>
             </tab>
         </tabs>

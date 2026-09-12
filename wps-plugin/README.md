@@ -6,12 +6,12 @@ WPS does **not** load Office.js add-ins — its core modules contain no `appsfor
 
 ## Ribbon
 
-Tab 单元格来源 → group 侧边栏批注:
+Tab 数据源 → group 侧边栏批注:
 
 | Button | Behaviour |
 | --- | --- |
-| 添加侧边栏批注 | Opens the sidebar for the currently selected cell |
-| 删除侧边栏批注 | Deletes the current cell's annotation and its attachments, immediately (mirrors Excel's native 删除批注) |
+| 显示侧边栏批注 | Opens the sidebar for the currently selected cell |
+| 隐藏侧边栏批注 | Hides the sidebar (annotation data is never deleted) |
 
 The sidebar is always about the **currently selected cell**. It re-reads when the selection changes (1.5s poll) and also picks up changes made from the ribbon.
 
@@ -40,9 +40,9 @@ A WPS cell holds at most 32767 characters, so base64 is split into 30000-charact
 | --- | --- |
 | `index.html` | Entry file WPS loads at startup |
 | `main.js` | Pulls in `js/util.js`, `js/metadata.js`, `js/ribbon.js` |
-| `ribbon.xml` | Ribbon tab 单元格来源 with the two buttons |
+| `ribbon.xml` | Ribbon tab 数据源 with the two buttons |
 | `manifest.xml` | Add-in manifest (`JsPlugin`) |
-| `js/ribbon.js` | `OnAddinLoad` / `OnAction` / `DeleteAnnotation`; creates the task pane |
+| `js/ribbon.js` | `OnAddinLoad` / `OnAction` / `ShowTaskPane`; creates and hides the task pane |
 | `js/metadata.js` | Storage layer over the WPS API (`__metadata`, `__metadata_attachments`) |
 | `ui/taskpane.html`, `js/taskpane.js` | The side panel itself |
 
@@ -57,7 +57,7 @@ WPS reads add-ins from `%APPDATA%\kingsoft\wps\jsaddons\`:
            <jsplugin name="cell-source-sidebar" type="et" url="cell-source-sidebar_1.0.0" version="1.0.0" enable="enable_dev" install="null" customDomain=""/>
        </jsplugins>
 
-3. Restart WPS 表格 (`et.exe`). A 单元格来源 tab appears.
+3. Restart WPS 表格 (`et.exe`). A 数据源 tab appears.
 4. Uninstall: delete the addon folder and its `<jsplugin>` entry.
 
 ## Verification
@@ -68,7 +68,7 @@ Set `AUTO_OPEN_TASKPANE = true` in `js/ribbon.js` to open the panel on startup. 
 
 - Keys use `Sheet!A1` on both hosts. WPS reports `Selection.Address` as a **method**, not a property, so `js/metadata.js` falls back to building A1 from `Row` / `Column`.
 - `PluginStorage` persists `taskpane_id` across sessions, so `ShowTaskPane` recreates the pane when a stored id no longer resolves.
-- Ribbon actions write their result to `PluginStorage["css_status"]`, which the sidebar shows — so 删除 gives visible feedback even though the ribbon and the pane are separate web views.
+- Ribbon actions write their result to `PluginStorage["css_status"]`, which the sidebar shows — so ribbon actions give visible feedback even though the ribbon and the pane are separate web views.
 - Deleting a row falls back to clearing its cells if `Range.Delete()` is unavailable; empty keys are skipped on read.
 - JSON import/export is not implemented yet.
 - Only WPS 表格 (ET) is targeted; Writer/Presentation are out of scope.
