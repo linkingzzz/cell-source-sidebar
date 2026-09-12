@@ -164,8 +164,15 @@ internal static class Setup
             File.Copy(Path.Combine(tmp, "manifest.xml"), C.Manifest, true);
             log("已安装加载项清单：" + C.Manifest);
 
-            File.Copy(Path.Combine(tmp, Path.Combine("workbook", "annotation-workbook.xlsx")), C.Workbook, true);
-            log("已安装批注工作簿：" + C.Workbook);
+            try
+            {
+                File.Copy(Path.Combine(tmp, Path.Combine("workbook", "annotation-workbook.xlsx")), C.Workbook, true);
+                log("已安装批注工作簿：" + C.Workbook);
+            }
+            catch (Exception ex)
+            {
+                log("警告：批注工作簿被占用，未能更新（请关闭 Excel 后重跑安装）：" + ex.Message);
+            }
 
             string excel = Detect.Excel();
             if (excel != null)
@@ -293,7 +300,7 @@ internal static class Remove
 
         log("");
         log("卸载完成。");
-        Process.Start(new ProcessStartInfo("cmd.exe", "/c ping -n 3 127.0.0.1 >nul & rmdir /s /q \"" + C.InstallDir + "\"")
+        Process.Start(new ProcessStartInfo("cmd.exe", "/c for /l %i in (1,1,12) do @(rmdir /s /q \"" + C.InstallDir + "\" 2>nul & if not exist \"" + C.InstallDir + "\" exit /b & ping -n 3 127.0.0.1 >nul)")
         {
             WindowStyle = ProcessWindowStyle.Hidden,
             CreateNoWindow = true
