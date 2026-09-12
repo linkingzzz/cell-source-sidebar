@@ -38,11 +38,32 @@ Excel 任务窗格加载项（Office.js）。侧边栏是**针对选中单元格
 
 The manifest needs a unique `<Id>` GUID, and its `SourceLocation` must match the URL the dev server actually serves.
 
+## 在 Excel 里加载（实测有效的做法，2026-09-12）
+
+只写 `HKCU\Software\Microsoft\Office\16.0\Wef\Developer` 注册表**不够**——那只是登记，功能区不会出现页签。真正让加载项加载的是 **sideload 文档**：官方工具会生成一个内嵌 web-extension 引用的工作簿，用 Excel 打开它即可挂载加载项。
+
+```powershell
+# 1) 起 HTTPS 开发服务器（另开一个终端）
+& "C:\Program Files\nodejs\npm.cmd" start     # https://localhost:3000
+
+# 2) 生成 sideload 文档并启动 Excel（二选一）
+& "C:\Program Files\nodejs\npm.cmd" install --no-save office-addin-debugging
+node -e "require('office-addin-dev-settings/lib/sideload.js').sideloadAddIn(require('path').resolve('manifest.xml'),'excel',false,false,'desktop')"
+```
+
+也可以走手工路径：把本文件夹加入 Excel「受信任的加载项目录」，再用 插入 → 我的加载项 → 共享文件夹 添加。
+
 ## 验证状态
 
+- ✅ **已在真实 Excel 中实测通过**（Excel 16.0.20326.20132 / Microsoft 365 家庭版，Windows）：
+  - 加载项加载：功能区出现「单元格来源」页签 + 两个按钮，右侧任务窗格打开并显示 `Office ready`。
+  - 三模块读写：明细表（9×4）与备注填好后点「保存到工作簿」→ `__metadata` 出现 `Sheet1!C2` 行，J 列是 9×4 的 grid JSON（读盘核对过）；切走再切回该单元格能正确读回。
+  - 附件：上传 `attach-sample.txt` 后自动建 `__metadata_attachments` 表并写入 base64；点附件名触发下载，落盘文件与源文件 **MD5 一致**（45 字节）。
+  - 功能区「删除侧边栏批注」：即时删除条目与附件，侧边栏轮询后变为「（无批注）/ 已存批注 0」。
+  - 功能区「添加侧边栏批注」：关掉侧边栏后点它可重新打开。
 - ✅ `office-addin-manifest validate manifest.xml`（Microsoft 官方校验器）→ `The manifest is valid.`
 - ✅ 静态契约一致性脚本（WPS 版 vs Office 版：常量、`parseGrid`、`emptyGrid`、`keyFromAddress`、DOM id、manifest resid）
-- ❌ **宿主内实测仍缺**：本机未安装 Excel 桌面版（只有 WPS，而 WPS 不支持 Office.js），因此「功能区按钮 → 侧边栏」「上传 / 下载 / 删除」等动作尚未在真实 Excel 里跑过。
+- ⚠️ 已知观感差异：Excel 会把按钮标签折成两行（「添加侧 / 边栏批注」），WPS 同一标签是一行。功能不受影响。
 
 Notes:
 - This prototype uses worksheet-based metadata (hidden sheet `__metadata`) for read/write compatibility across hosts. CustomXMLParts support is left as an enhancement.
