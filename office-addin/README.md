@@ -18,6 +18,7 @@ Excel 任务窗格加载项（Office.js）。侧边栏是**针对选中单元格
 - `__metadata`：A key(`Sheet!A1`) · B type · C source · D url · E note · F attachments(JSON 数组) · G author · H last_modified · I version · **J grid（9×4 JSON）**
 - `__metadata_attachments`：A id · B filename · C mime · D size · E base64 · F uploaded_by · G uploaded_at · **H part（1-based 分片序号）**
 - base64 超过 30000 字符时按片独占一行，同 id 多行，读时按 `part` 拼接（Excel 单元格上限 32767）。单文件上限 10MB。
+- 两张表**新建即隐藏**（`sheet.visibility = "Hidden"`），并且建表后先切回原来的活动表再隐藏：写批注数据时既不会多出一个工作表标签，也不会跳到那张表。想查看时在工作表标签上右键「取消隐藏」。
 
 ## Prerequisites
 - Node.js (tested with v24) and Microsoft Excel desktop (Microsoft 365) on Windows.

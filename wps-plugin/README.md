@@ -34,6 +34,8 @@ Same two sheets as the Office add-in, so one workbook works in both hosts.
 
 A WPS cell holds at most 32767 characters, so base64 is split into 30000-character chunks — one row per chunk, same `id`, numbered in column `H`; reads concatenate them in `part` order. Columns J and H were added for this feature; workbooks written by the previous version still read fine (missing header or cell → empty grid).
 
+Both sheets are created **hidden** (`Visible = 0`) and the previously active sheet is re-activated before hiding, so writing data never adds a visible tab or jumps the view. Unhide them from the sheet-tab context menu when you want to inspect the raw rows.
+
 ## Layout
 
 | Path | Purpose |

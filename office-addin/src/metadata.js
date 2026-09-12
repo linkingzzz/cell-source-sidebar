@@ -93,8 +93,14 @@ async function ensureSheet(context, name, header) {
   sheet.load("name");
   await context.sync();
   if (sheet.isNullObject) {
+    const active = context.workbook.worksheets.getActiveWorksheet();
     sheet = context.workbook.worksheets.add(name);
     sheet.getRangeByIndexes(0, 0, 1, header.length).values = [header];
+    await context.sync();
+    // 数据表默认隐藏，且不抢当前活动表：加批注数据时不该把这张表翻到前台。
+    // 想查看时由用户自己在工作表标签上「取消隐藏」。
+    active.activate();
+    sheet.visibility = "Hidden";
     await context.sync();
     return sheet;
   }

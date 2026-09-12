@@ -31,8 +31,14 @@ function getSheet(name) {
 function ensureSheet(name, header) {
     let s = getSheet(name)
     if (!s) {
+        // 数据表默认隐藏，且不抢当前活动表：加批注数据时不该把这张表翻到前台。
+        // 想查看时由用户自己在工作表标签上「取消隐藏」。
+        let prev = null
+        try { prev = getApp().ActiveSheet } catch (e) { }
         s = getApp().ActiveWorkbook.Worksheets.Add()
         s.Name = name
+        if (prev) { try { prev.Activate() } catch (e) { } }
+        s.Visible = 0
     }
     for (let c = 0; c < header.length; c++) {
         if (!cellText(s, 1, c + 1)) s.Cells.Item(1, c + 1).Value2 = header[c]
