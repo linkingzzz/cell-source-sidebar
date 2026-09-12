@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="TaskPaneApp">
+  <Id>685A162B-4215-4F8B-96BF-63C9D19E8A35</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>cell-source-sidebar</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="表格批注插件" />
+  <Description DefaultValue="在侧边栏为单元格添加批注：附件 / 明细表 / 备注，数据随工作簿保存" />
+  <IconUrl DefaultValue="https://linkingzzz.github.io/cell-source-sidebar/office-addin/src/assets/icon-32.png" />
+  <SupportUrl DefaultValue="https://github.com/linkingzzz/cell-source-sidebar" />
+  <Hosts>
+    <Host Name="Workbook" />
+  </Hosts>
+  <Requirements>
+    <Sets DefaultMinVersion="1.1">
+      <Set Name="SharedRuntime" MinVersion="1.1" />
+    </Sets>
+  </Requirements>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://linkingzzz.github.io/cell-source-sidebar/office-addin/src/taskpane.html" />
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Workbook">
+        <Runtimes>
+          <Runtime resid="Taskpane.Url" lifetime="long" />
+        </Runtimes>
+        <DesktopFormFactor>
+          <FunctionFile resid="Taskpane.Url" />
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <CustomTab id="CellSourceSidebar.Tab">
+              <Group id="CellSourceSidebar.Group">
+                <Label resid="Group.Label" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16" />
+                  <bt:Image size="32" resid="Icon.32" />
+                  <bt:Image size="80" resid="Icon.80" />
+                </Icon>
+                <Control xsi:type="Button" id="CellSourceSidebar.AddBtn">
+                  <Label resid="Add.Label" />
+                  <Supertip>
+                    <Title resid="Add.Label" />
+                    <Description resid="Add.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16" />
+                    <bt:Image size="32" resid="Icon.32" />
+                    <bt:Image size="80" resid="Icon.80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>CellSourceSidebarPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="CellSourceSidebar.HideBtn">
+                  <Label resid="Hide.Label" />
+                  <Supertip>
+                    <Title resid="Hide.Label" />
+                    <Description resid="Hide.Tip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16" />
+                    <bt:Image size="32" resid="Icon.32" />
+                    <bt:Image size="80" resid="Icon.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>hideAnnotation</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+              <Label resid="Tab.Label" />
+            </CustomTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://linkingzzz.github.io/cell-source-sidebar/office-addin/src/assets/icon-16.png" />
+        <bt:Image id="Icon.32" DefaultValue="https://linkingzzz.github.io/cell-source-sidebar/office-addin/src/assets/icon-32.png" />
+        <bt:Image id="Icon.80" DefaultValue="https://linkingzzz.github.io/cell-source-sidebar/office-addin/src/assets/icon-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://linkingzzz.github.io/cell-source-sidebar/office-addin/src/taskpane.html" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="Tab.Label" DefaultValue="数据源" />
+        <bt:String id="Group.Label" DefaultValue="侧边栏批注" />
+        <bt:String id="Add.Label" DefaultValue="显示侧边栏批注" />
+        <bt:String id="Hide.Label" DefaultValue="隐藏侧边栏批注" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="Add.Tip" DefaultValue="打开侧边栏，编辑当前单元格的批注（附件 / 明细表 / 备注）" />
+        <bt:String id="Hide.Tip" DefaultValue="隐藏右侧的批注侧边栏" />
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>
