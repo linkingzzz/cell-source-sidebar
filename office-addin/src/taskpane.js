@@ -20,15 +20,31 @@ function log(msg) {
   if (el) el.innerText = msg + "\n" + el.innerText;
 }
 
+// 功能区「隐藏侧边栏批注」：注册在共享运行时里的动作（见 manifest.xml 的 <Runtimes>）。
+async function hideAnnotation(event) {
+  try {
+    await Office.addin.hide();
+  } catch (e) {
+    log("hide error: " + e);
+  } finally {
+    event.completed();
+  }
+}
+
 Office.onReady((info) => {
   $("status").innerText = "Office ready";
   $("wbName").innerText = info && info.host ? String(info.host) : "";
+  if (Office.actions && Office.actions.associate) {
+    Office.actions.associate("hideAnnotation", hideAnnotation);
+  } else {
+    log("Office.actions 不可用，隐藏按钮将无效");
+  }
   buildGrid();
   $("uploadBtn").addEventListener("click", () => $("fileInput").click());
   $("fileInput").addEventListener("change", onUpload);
   $("saveBtn").addEventListener("click", onSave);
   refresh(true).catch((e) => log("init error: " + e));
-  // Polling covers both selection changes and edits made from the ribbon (删除侧边栏批注).
+  // Polling covers both selection changes and edits made elsewhere (e.g. another surface).
   setInterval(() => refresh(false).catch((e) => log("poll error: " + e)), POLL_MS);
 });
 

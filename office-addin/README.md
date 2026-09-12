@@ -1,16 +1,17 @@
 # Office Add-in - Cell Source Sidebar (Office.js)
 
-Excel 任务窗格加载项（Office.js）。侧边栏是**针对选中单元格**的批注，分三块：1 附件（上传 / 点击下载 / 删除）、2 明细表（9 × 4 可编辑表格）、3 备注，底部「保存到工作簿」写回。功能区页签「单元格来源」下有 **添加侧边栏批注** / **删除侧边栏批注** 两个按钮，与 `wps-plugin/` 同款、同存储契约。
+Excel 任务窗格加载项（Office.js）。侧边栏是**针对选中单元格**的批注，分三块：1 附件（上传 / 点击下载 / 删除）、2 明细表（9 × 4 可编辑表格）、3 备注，底部「保存到工作簿」写回。功能区页签「数据源」下有 **添加侧边栏批注** / **隐藏侧边栏批注** 两个按钮，与 `wps-plugin/` 同款、同存储契约。
 
 ## 文件结构
 
 | 文件 | 作用 |
 | --- | --- |
-| `manifest.xml` | 加载项清单：任务窗格 + `VersionOverrides`（自定义页签、两个功能区按钮） |
-| `src/taskpane.html` / `src/taskpane.js` | 侧边栏 UI：附件 / 9×4 明细表 / 备注 |
-| `src/commands.html` / `src/commands.js` | 功能区 function file：「删除侧边栏批注」的 `deleteAnnotation` |
+| `manifest.xml` | 加载项清单：任务窗格 + `VersionOverrides`（自定义页签、两个功能区按钮、长生命周期共享运行时） |
+| `src/taskpane.html` / `src/taskpane.js` | 侧边栏 UI：附件 / 9×4 明细表 / 备注；功能区动作 `hideAnnotation` 也在这里 |
 | `src/metadata.js` | 元数据层（`window.metadataApi`），读写隐藏表 `__metadata` / `__metadata_attachments` |
 | `src/assets/icon-{16,32,80}.png` | 功能区与清单图标 |
+
+> **为什么没有 `commands.html`**：`Office.addin.hide()` 属于 **SharedRuntime 1.1** 要求集。没有共享运行时时，`Office.addin` 对象虽然存在，但 `hide()` 会抛 `There was an internal error while processing the request.`——按钮点了毫无反应。因此 `manifest.xml` 声明了 `<Set Name="SharedRuntime" MinVersion="1.1" />`，并用 `<Runtimes><Runtime resid="Taskpane.Url" lifetime="long" /></Runtimes>` 让功能区命令与侧边栏跑在同一个运行时里，`<FunctionFile>` 随之指向 `Taskpane.Url`，`hideAnnotation` 改用 `Office.actions.associate` 注册。
 
 ## 存储契约（与 WPS 版一致）
 
@@ -34,7 +35,7 @@ Excel 任务窗格加载项（Office.js）。侧边栏是**针对选中单元格
 1. Excel → 文件 → 选项 → 信任中心 → 信任中心设置 → 受信任的加载项目录.
 2. Add this folder (`...\cell-source-sidebar\office-addin`) as a catalog, tick 显示在菜单中, then restart Excel.
 3. 插入 → 我的加载项 → 共享文件夹 → **Cell Source Sidebar** → 添加.
-4. Open any workbook; the pane appears and writes metadata to a hidden `__metadata` sheet. 功能区「单元格来源」页签下应出现两个按钮。
+4. Open any workbook; the pane appears and writes metadata to a hidden `__metadata` sheet. 功能区「数据源」页签下应出现两个按钮。
 
 The manifest needs a unique `<Id>` GUID, and its `SourceLocation` must match the URL the dev server actually serves.
 
@@ -56,14 +57,16 @@ node -e "require('office-addin-dev-settings/lib/sideload.js').sideloadAddIn(requ
 ## 验证状态
 
 - ✅ **已在真实 Excel 中实测通过**（Excel 16.0.20326.20132 / Microsoft 365 家庭版，Windows）：
-  - 加载项加载：功能区出现「单元格来源」页签 + 两个按钮，右侧任务窗格打开并显示 `Office ready`。
+  - 加载项加载：功能区出现「数据源」页签 + 两个按钮，右侧任务窗格打开并显示 `Office ready`。
   - 三模块读写：明细表（9×4）与备注填好后点「保存到工作簿」→ `__metadata` 出现 `Sheet1!C2` 行，J 列是 9×4 的 grid JSON（读盘核对过）；切走再切回该单元格能正确读回。
   - 附件：上传 `attach-sample.txt` 后自动建 `__metadata_attachments` 表并写入 base64；点附件名触发下载，落盘文件与源文件 **MD5 一致**（45 字节）。
-  - 功能区「删除侧边栏批注」：即时删除条目与附件，侧边栏轮询后变为「（无批注）/ 已存批注 0」。
+  - 功能区「隐藏侧边栏批注」：隐藏右侧任务窗格（`Office.addin.hide()`，依赖上面的共享运行时）。
   - 功能区「添加侧边栏批注」：关掉侧边栏后点它可重新打开。
+  - 2026-09-12 复测（改共享运行时之后，截图 `../_附件/excel-v3-*.png`）：页签 `数据源`、按钮 `隐藏侧边栏批注`（悬停提示「隐藏右侧的批注侧边栏」）→ 点它侧边栏消失 → 再点「添加侧边栏批注」回来 → 备注保存后状态变「已有批注」。
 - ✅ `office-addin-manifest validate manifest.xml`（Microsoft 官方校验器）→ `The manifest is valid.`
 - ✅ 静态契约一致性脚本（WPS 版 vs Office 版：常量、`parseGrid`、`emptyGrid`、`keyFromAddress`、DOM id、manifest resid）
 - ⚠️ 已知观感差异：Excel 会把按钮标签折成两行（「添加侧 / 边栏批注」），WPS 同一标签是一行。功能不受影响。
+- ℹ️ 功能区已不含「删除批注」：按钮现为「隐藏侧边栏批注」（只隐藏窗格），批注数据不会被删除；如需删除能力需另外补回。
 
 Notes:
 - This prototype uses worksheet-based metadata (hidden sheet `__metadata`) for read/write compatibility across hosts. CustomXMLParts support is left as an enhancement.
